@@ -22,10 +22,11 @@ cd De-blurring-with-GAN
 pip install -r requirements.txt
 ```
 
-3. Download the trained model:
-- The model file (`deblur_generator.h5`) is not included in the repository due to size limitations
-- Download it from the [Releases page](https://github.com/AddyCuber/De-blurring-with-GAN/releases/latest)
+3. Download the required files:
+- The model file (`deblur_generator.h5`) and training notebook are not included in the repository due to size limitations
+- Download both from the [Releases page](https://github.com/AddyCuber/De-blurring-with-GAN/releases/latest)
 - Place the downloaded `deblur_generator.h5` file in the root directory of the project
+- The notebook `deblurring-with-gan.ipynb` contains the model training code and documentation
 
 4. Run the application:
 ```bash
@@ -38,15 +39,16 @@ python app.py
 
 ```
 De-blurring-with-GAN/
-├── app.py              # Flask application
-├── deblur_generator.h5 # Trained model (download from Releases)
-├── templates/          # HTML templates
-│   ├── index.html     # Upload page
-│   └── result.html    # Results page
-├── static/            # Static files
-│   └── uploads/       # Uploaded images
-├── requirements.txt   # Python dependencies
-└── README.md         # This file
+├── app.py                    # Flask application
+├── deblur_generator.h5       # Trained model (download from Releases)
+├── deblurring-with-gan.ipynb # Training notebook (download from Releases)
+├── templates/                # HTML templates
+│   ├── index.html           # Upload page
+│   └── result.html          # Results page
+├── static/                  # Static files
+│   └── uploads/             # Uploaded images
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
 ```
 
 ## Technologies Used
@@ -64,6 +66,14 @@ The `deblur_generator.h5` file contains a trained GAN generator model that can d
 - Output: Deblurred images maintaining the original aspect ratio
 - Architecture: Based on a GAN with custom reflection padding
 - File size: ~45MB
+
+## Training
+
+The training process and model architecture are documented in the Jupyter notebook `deblurring-with-gan.ipynb`. The notebook includes:
+- Data preprocessing and augmentation
+- Model architecture implementation
+- Training configuration and hyperparameters
+- Results and performance analysis
 
 ## License
 
