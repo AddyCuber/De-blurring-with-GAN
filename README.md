@@ -24,7 +24,8 @@ pip install -r requirements.txt
 
 3. Download the trained model:
 - The model file (`deblur_generator.h5`) is not included in the repository due to size limitations
-- You can download it from [here](link-to-model-file)
+- Download it from the [Releases page](https://github.com/AddyCuber/De-blurring-with-GAN/releases/latest)
+- Place the downloaded `deblur_generator.h5` file in the root directory of the project
 
 4. Run the application:
 ```bash
@@ -38,6 +39,7 @@ python app.py
 ```
 De-blurring-with-GAN/
 ├── app.py              # Flask application
+├── deblur_generator.h5 # Trained model (download from Releases)
 ├── templates/          # HTML templates
 │   ├── index.html     # Upload page
 │   └── result.html    # Results page
@@ -54,6 +56,14 @@ De-blurring-with-GAN/
 - TensorFlow
 - HTML/CSS
 - JavaScript
+
+## Model Information
+
+The `deblur_generator.h5` file contains a trained GAN generator model that can deblur images. The model:
+- Input: Blurred RGB images (any size, will be resized internally)
+- Output: Deblurred images maintaining the original aspect ratio
+- Architecture: Based on a GAN with custom reflection padding
+- File size: ~45MB
 
 ## License
 
