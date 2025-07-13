@@ -6,7 +6,7 @@ from PIL import Image
 import io
 import h5py
 
-# Custom layer definition
+# Custom layer definitions
 class ReflectionPadding2D(tf.keras.layers.Layer):
     def __init__(self, padding=(1, 1), **kwargs):
         self.padding = tuple(padding)
@@ -27,6 +27,14 @@ class ReflectionPadding2D(tf.keras.layers.Layer):
                       [0,0]],
                      'REFLECT')
 
+class ReLULayer(tf.keras.layers.Layer):
+    def call(self, inputs):
+        return tf.nn.relu(inputs)
+
+class TanhLayer(tf.keras.layers.Layer):
+    def call(self, inputs):
+        return tf.nn.tanh(inputs)
+
 def Generator():
     initializer = tf.random_normal_initializer(0., 0.02)
     inputs = tf.keras.layers.Input(shape=[256, 256, 3])
@@ -36,19 +44,19 @@ def Generator():
     x = tf.keras.layers.Conv2D(64, kernel_size=(7,7), padding='valid',
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     # 3x3 Conv n128s2
     x = tf.keras.layers.Conv2D(128, kernel_size=(3,3), padding='same', strides=2,
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     # 3x3 Conv n256s2
     x = tf.keras.layers.Conv2D(256, kernel_size=(3,3), padding='same', strides=2,
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     # 9 resnet blocks n256
     for _ in range(9):
@@ -59,20 +67,20 @@ def Generator():
     x = tf.keras.layers.Conv2D(128, kernel_size=(3,3), padding='same',
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     # unsampling n64
     x = tf.keras.layers.UpSampling2D(interpolation='bilinear')(x)
     x = tf.keras.layers.Conv2D(64, kernel_size=(3,3), padding='same',
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     # 7x7 Conv n64
     x = ReflectionPadding2D(padding=(3,3))(x)
     x = tf.keras.layers.Conv2D(filters=3, kernel_size=(7,7), padding='valid',
                kernel_initializer=initializer)(x)
-    x = tf.nn.tanh(x)
+    x = TanhLayer()(x)
 
     return tf.keras.Model(inputs=inputs, outputs=x)
 
@@ -82,7 +90,7 @@ def res_net(input, filters, kernel_size=(3,3), apply_dropout=False):
     x = tf.keras.layers.Conv2D(filters, kernel_size=kernel_size, padding='valid',
                kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.nn.relu(x)
+    x = ReLULayer()(x)
 
     x = ReflectionPadding2D(padding=(1,1))(x)
     x = tf.keras.layers.Conv2D(filters, kernel_size=kernel_size, padding='valid',
@@ -98,7 +106,11 @@ def res_net(input, filters, kernel_size=(3,3), apply_dropout=False):
 app = Flask(__name__)
 
 # Create and load the model
-with tf.keras.utils.custom_object_scope({'ReflectionPadding2D': ReflectionPadding2D}):
+with tf.keras.utils.custom_object_scope({
+    'ReflectionPadding2D': ReflectionPadding2D,
+    'ReLULayer': ReLULayer,
+    'TanhLayer': TanhLayer
+}):
     model = Generator()
     model.load_weights('deblur_generator.h5')
 
@@ -132,8 +144,9 @@ def preprocess_image(image):
     # Paste the resized image onto the square image
     square_image.paste(image, (paste_x, paste_y))
     
-    # Convert to numpy array and normalize
-    img_array = np.array(square_image) / 255.0
+    # Convert to numpy array and normalize to [-1, 1] range (standard for GANs)
+    img_array = np.array(square_image).astype(np.float32)
+    img_array = (img_array / 127.5) - 1.0
     # Add batch dimension
     img_array = np.expand_dims(img_array, axis=0)
     
@@ -142,8 +155,10 @@ def preprocess_image(image):
 def postprocess_image(predicted, original_size):
     # Remove batch dimension
     predicted = predicted[0]
-    # Denormalize
-    predicted = (predicted * 255).astype(np.uint8)
+    # Denormalize from [-1, 1] to [0, 255]
+    predicted = ((predicted + 1.0) * 127.5).astype(np.uint8)
+    # Clip values to valid range
+    predicted = np.clip(predicted, 0, 255)
     # Convert to PIL Image
     image = Image.fromarray(predicted)
     
